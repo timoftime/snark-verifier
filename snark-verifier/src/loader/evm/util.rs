@@ -12,8 +12,8 @@ pub use primitive_types::{H160 as Address, H256, U256, U512};
 
 pub(crate) mod executor;
 
-pub use executor::ExecutorBuilder;
-
+// pub use executor::ExecutorBuilder;
+pub use executor::deploy_and_call;
 /// Memory chunk in EVM.
 #[derive(Debug)]
 pub struct MemoryChunk {
