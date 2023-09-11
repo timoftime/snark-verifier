@@ -29,6 +29,9 @@ jobs:
       - name: Run test
         run: cargo test --all -- --nocapture
 
+      - name: Run example
+        working-directory: "snark-verifier-sdk"
+        run: cargo run --example standard_plonk
 
   lint:
     name: Lint
