@@ -137,6 +137,7 @@ mod halo2_lib {
     use halo2_base::{
         self,
         gates::{builder::GateThreadBuilder, GateChip, GateInstructions, RangeInstructions},
+        halo2_proofs::halo2curves::group::ff::PrimeField as _,
         AssignedValue,
         QuantumCell::{Constant, Existing},
     };
