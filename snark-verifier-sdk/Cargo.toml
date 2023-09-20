@@ -70,6 +70,6 @@ name = "zkevm_plus_state"
 required-features = ["loader_halo2", "loader_evm", "zkevm", "halo2-pse"]
 harness = false
 
-[[example]]
-name = "standard_plonk"
-required-features = ["loader_halo2", "loader_evm"]
+# [[example]]
+# name = "standard_plonk"
+# required-features = ["loader_halo2", "loader_evm"]
