@@ -60,9 +60,7 @@ pub struct EvmLoader {
 }
 
 fn hex_encode_u256(value: &U256) -> String {
-    let mut bytes = [0; 32];
-    value.to_big_endian(&mut bytes);
-    format!("0x{}", hex::encode(bytes))
+    format!("0x{}", hex::encode(value.to_be_bytes::<32>()))
 }
 
 impl EvmLoader {
@@ -312,11 +310,11 @@ impl EvmLoader {
     fn invert(self: &Rc<Self>, scalar: &Scalar) -> Scalar {
         let rd_ptr = self.allocate(0x20);
         let [cd_ptr, ..] = [
-            &self.scalar(Value::Constant(0x20.into())),
-            &self.scalar(Value::Constant(0x20.into())),
-            &self.scalar(Value::Constant(0x20.into())),
+            &self.scalar(Value::Constant(U256::from(0x20))),
+            &self.scalar(Value::Constant(U256::from(0x20))),
+            &self.scalar(Value::Constant(U256::from(0x20))),
             scalar,
-            &self.scalar(Value::Constant(self.scalar_modulus - 2)),
+            &self.scalar(Value::Constant(self.scalar_modulus - U256::from(2))),
             &self.scalar(Value::Constant(self.scalar_modulus)),
         ]
         .map(|value| self.dup_scalar(value).ptr());
@@ -387,8 +385,8 @@ impl EvmLoader {
 
     fn add(self: &Rc<Self>, lhs: &Scalar, rhs: &Scalar) -> Scalar {
         if let (Value::Constant(lhs), Value::Constant(rhs)) = (&lhs.value, &rhs.value) {
-            let out = (U512::from(lhs) + U512::from(rhs)) % U512::from(self.scalar_modulus);
-            return self.scalar(Value::Constant(out.try_into().unwrap()));
+            let out = (U512::from(*lhs) + U512::from(*rhs)) % U512::from(self.scalar_modulus);
+            return self.scalar(Value::Constant(U256::from(out)));
         }
 
         self.scalar(Value::Sum(Box::new(lhs.value.clone()), Box::new(rhs.value.clone())))
@@ -404,15 +402,15 @@ impl EvmLoader {
             Box::new(Value::Negated(Box::new(rhs.value.clone()))),
         ))
     }
-
     fn mul(self: &Rc<Self>, lhs: &Scalar, rhs: &Scalar) -> Scalar {
         if let (Value::Constant(lhs), Value::Constant(rhs)) = (&lhs.value, &rhs.value) {
-            let out = (U512::from(lhs) * U512::from(rhs)) % U512::from(self.scalar_modulus);
-            return self.scalar(Value::Constant(out.try_into().unwrap()));
+            let out = (U512::from(*lhs) * U512::from(*rhs)) % U512::from(self.scalar_modulus);
+            return self.scalar(Value::Constant(U256::from(out)));
         }
 
         self.scalar(Value::Product(Box::new(lhs.value.clone()), Box::new(rhs.value.clone())))
     }
+
 
     fn neg(self: &Rc<Self>, scalar: &Scalar) -> Scalar {
         if let Value::Constant(constant) = scalar.value {
@@ -645,12 +643,14 @@ where
 {
     type LoadedEcPoint = EcPoint;
 
+
     fn ec_point_load_const(&self, value: &C) -> EcPoint {
         let coordinates = value.coordinates().unwrap();
         let [x, y] = [coordinates.x(), coordinates.y()]
-            .map(|coordinate| U256::from_little_endian(coordinate.to_repr().as_ref()));
+            .map(|coordinate| U256::try_from_le_slice(coordinate.to_repr().as_ref()).unwrap());
         self.ec_point(Value::Constant((x, y)))
     }
+
 
     fn ec_point_assert_eq(&self, _: &str, _: &EcPoint, _: &EcPoint) {
         unimplemented!()
@@ -663,7 +663,7 @@ where
             .iter()
             .cloned()
             .map(|(scalar, ec_point)| match scalar.value {
-                Value::Constant(constant) if U256::one() == constant => ec_point.clone(),
+                Value::Constant(constant) if U256::from(1) == constant => ec_point.clone(),
                 _ => ec_point.loader.ec_point_scalar_mul(ec_point, scalar),
             })
             .reduce(|acc, ec_point| acc.loader.ec_point_add(&acc, &ec_point))
