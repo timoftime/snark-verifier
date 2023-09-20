@@ -1,17 +1,16 @@
+use ark_std::{end_timer, start_timer};
 use criterion::{criterion_group, criterion_main};
 use criterion::{BenchmarkId, Criterion};
 use halo2_base::gates::builder::CircuitBuilderStage;
-use halo2_base::utils::fs::gen_srs;
-use pprof::criterion::{Output, PProfProfiler};
-use rand::rngs::OsRng;
-use std::path::Path;
-use ark_std::{end_timer, start_timer};
 use halo2_base::halo2_proofs;
+use halo2_base::utils::fs::gen_srs;
 use halo2_proofs::halo2curves as halo2_curves;
 use halo2_proofs::{
     halo2curves::bn256::Bn256,
     poly::{commitment::Params, kzg::commitment::ParamsKZG},
 };
+use pprof::criterion::{Output, PProfProfiler};
+use rand::rngs::OsRng;
 use snark_verifier_sdk::evm::{evm_verify, gen_evm_proof_shplonk, gen_evm_verifier_shplonk};
 use snark_verifier_sdk::halo2::aggregation::AggregationConfigParams;
 use snark_verifier_sdk::{
@@ -20,6 +19,7 @@ use snark_verifier_sdk::{
     Snark,
 };
 use snark_verifier_sdk::{CircuitExt, SHPLONK};
+use std::path::Path;
 
 mod application {
     use super::halo2_curves::bn256::Fr;

@@ -54,7 +54,8 @@ pub fn fe_to_u256<F>(f: F) -> U256
 where
     F: PrimeField<Repr = [u8; 32]>,
 {
-    U256::from_le_bytes(f.to_repr())}
+    U256::from_le_bytes(f.to_repr())
+}
 
 /// Convert a [`U256`] into a [`PrimeField`].
 pub fn u256_to_fe<F>(value: U256) -> F
@@ -70,7 +71,8 @@ pub fn modulus<F>() -> U256
 where
     F: PrimeField<Repr = [u8; 32]>,
 {
-    U256::from_le_bytes((-F::ONE).to_repr()) + U256::from(1)}
+    U256::from_le_bytes((-F::one()).to_repr()) + U256::from(1)
+}
 
 /// Encode instances and proof into calldata.
 pub fn encode_calldata<F>(instances: &[Vec<F>], proof: &[u8]) -> Vec<u8>

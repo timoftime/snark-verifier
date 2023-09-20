@@ -411,7 +411,6 @@ impl EvmLoader {
         self.scalar(Value::Product(Box::new(lhs.value.clone()), Box::new(rhs.value.clone())))
     }
 
-
     fn neg(self: &Rc<Self>, scalar: &Scalar) -> Scalar {
         if let Value::Constant(constant) = scalar.value {
             return self.scalar(Value::Constant(self.scalar_modulus - constant));
@@ -643,14 +642,12 @@ where
 {
     type LoadedEcPoint = EcPoint;
 
-
     fn ec_point_load_const(&self, value: &C) -> EcPoint {
         let coordinates = value.coordinates().unwrap();
         let [x, y] = [coordinates.x(), coordinates.y()]
             .map(|coordinate| U256::try_from_le_slice(coordinate.to_repr().as_ref()).unwrap());
         self.ec_point(Value::Constant((x, y)))
     }
-
 
     fn ec_point_assert_eq(&self, _: &str, _: &EcPoint, _: &EcPoint) {
         unimplemented!()

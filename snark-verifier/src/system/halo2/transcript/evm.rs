@@ -274,7 +274,7 @@ where
     type Input = [u8; 32];
 
     fn new(challenge_input: &[u8; 32]) -> Self {
-       ChallengeEvm(u256_to_fe(U256::from_be_bytes(*challenge_input)))
+        ChallengeEvm(u256_to_fe(U256::from_be_bytes(*challenge_input)))
     }
 
     fn get_scalar(&self) -> C::Scalar {
