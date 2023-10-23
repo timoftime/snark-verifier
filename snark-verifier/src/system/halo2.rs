@@ -7,7 +7,7 @@ use crate::halo2_proofs::{
 };
 use crate::{
     util::{
-        arithmetic::{root_of_unity, CurveAffine, Domain, PrimeField, Rotation},
+        arithmetic::{root_of_unity, CurveAffine, Domain, FromUniformBytes, PrimeField, Rotation},
         Itertools,
     },
     verifier::plonk::protocol::{
@@ -83,7 +83,10 @@ pub fn compile<'a, C: CurveAffine, P: Params<'a, C>>(
     params: &P,
     vk: &VerifyingKey<C>,
     config: Config,
-) -> PlonkProtocol<C> {
+) -> PlonkProtocol<C>
+where
+    C::Scalar: FromUniformBytes<64>,
+{
     assert_eq!(vk.get_domain().k(), params.k());
 
     let cs = vk.cs();
@@ -718,7 +721,10 @@ impl<C: CurveAffine> Transcript<C, MockChallenge> for MockTranscript<C::Scalar> 
 
 /// Returns the transcript initial state of the [VerifyingKey].
 /// Roundabout way to do it because [VerifyingKey] doesn't expose the field.
-pub fn transcript_initial_state<C: CurveAffine>(vk: &VerifyingKey<C>) -> C::Scalar {
+pub fn transcript_initial_state<C: CurveAffine>(vk: &VerifyingKey<C>) -> C::Scalar
+where
+    C::Scalar: FromUniformBytes<64>,
+{
     let mut transcript = MockTranscript::default();
     vk.hash_into(&mut transcript).unwrap();
     transcript.0

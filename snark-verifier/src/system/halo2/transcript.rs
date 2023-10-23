@@ -4,13 +4,12 @@ use crate::halo2_proofs;
 use crate::{
     loader::native::{self, NativeLoader},
     util::{
-        arithmetic::CurveAffine,
+        arithmetic::{CurveAffine, FromUniformBytes},
         transcript::{Transcript, TranscriptRead, TranscriptWrite},
     },
     Error,
 };
 use halo2_proofs::transcript::{Blake2bRead, Blake2bWrite, Challenge255};
-use pairing::group::ff::FromUniformBytes;
 use std::io::{Read, Write};
 
 #[cfg(feature = "loader_evm")]

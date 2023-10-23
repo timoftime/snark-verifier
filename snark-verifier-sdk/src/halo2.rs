@@ -275,89 +275,89 @@ pub fn read_snark(path: impl AsRef<Path>) -> Result<Snark, bincode::Error> {
 }
 
 // copied from snark_verifier --example recursion
-pub fn gen_dummy_snark<ConcreteCircuit, AS>(
-    params: &ParamsKZG<Bn256>,
-    vk: Option<&VerifyingKey<G1Affine>>,
-    num_instance: Vec<usize>,
-) -> Snark
-where
-    ConcreteCircuit: CircuitExt<Fr>,
-    AS: PolynomialCommitmentScheme<
-            G1Affine,
-            NativeLoader,
-            VerifyingKey = KzgSuccinctVerifyingKey<G1Affine>,
-            Output = KzgAccumulator<G1Affine, NativeLoader>,
-        > + AccumulationScheme<
-            G1Affine,
-            NativeLoader,
-            Accumulator = KzgAccumulator<G1Affine, NativeLoader>,
-            VerifyingKey = KzgAsVerifyingKey,
-        > + CostEstimation<G1Affine, Input = Vec<Query<Rotation>>>,
-{
-    struct CsProxy<F, C>(PhantomData<(F, C)>);
+// pub fn gen_dummy_snark<ConcreteCircuit, AS>(
+//     params: &ParamsKZG<Bn256>,
+//     vk: Option<&VerifyingKey<G1Affine>>,
+//     num_instance: Vec<usize>,
+// ) -> Snark
+// where
+//     ConcreteCircuit: CircuitExt<Fr>,
+//     AS: PolynomialCommitmentScheme<
+//             G1Affine,
+//             NativeLoader,
+//             VerifyingKey = KzgSuccinctVerifyingKey<G1Affine>,
+//             Output = KzgAccumulator<G1Affine, NativeLoader>,
+//         > + AccumulationScheme<
+//             G1Affine,
+//             NativeLoader,
+//             Accumulator = KzgAccumulator<G1Affine, NativeLoader>,
+//             VerifyingKey = KzgAsVerifyingKey,
+//         > + CostEstimation<G1Affine, Input = Vec<Query<Rotation>>>,
+// {
+//     struct CsProxy<F, C>(PhantomData<(F, C)>);
 
-    impl<F: Field, C: CircuitExt<F>> Circuit<F> for CsProxy<F, C> {
-        type Config = C::Config;
-        type FloorPlanner = C::FloorPlanner;
+//     impl<F: Field, C: CircuitExt<F>> Circuit<F> for CsProxy<F, C> {
+//         type Config = C::Config;
+//         type FloorPlanner = C::FloorPlanner;
 
-        fn without_witnesses(&self) -> Self {
-            CsProxy(PhantomData)
-        }
+//         fn without_witnesses(&self) -> Self {
+//             CsProxy(PhantomData)
+//         }
 
-        fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            C::configure(meta)
-        }
+//         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
+//             C::configure(meta)
+//         }
 
-        fn synthesize(
-            &self,
-            config: Self::Config,
-            mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
-            // when `C` has simple selectors, we tell `CsProxy` not to over-optimize the selectors (e.g., compressing them  all into one) by turning all selectors on in the first row
-            // currently this only works if all simple selector columns are used in the actual circuit and there are overlaps amongst all enabled selectors (i.e., the actual circuit will not optimize constraint system further)
-            layouter.assign_region(
-                || "",
-                |mut region| {
-                    for q in C::selectors(&config).iter() {
-                        q.enable(&mut region, 0)?;
-                    }
-                    Ok(())
-                },
-            )?;
-            Ok(())
-        }
-    }
+//         fn synthesize(
+//             &self,
+//             config: Self::Config,
+//             mut layouter: impl Layouter<F>,
+//         ) -> Result<(), Error> {
+//             // when `C` has simple selectors, we tell `CsProxy` not to over-optimize the selectors (e.g., compressing them  all into one) by turning all selectors on in the first row
+//             // currently this only works if all simple selector columns are used in the actual circuit and there are overlaps amongst all enabled selectors (i.e., the actual circuit will not optimize constraint system further)
+//             layouter.assign_region(
+//                 || "",
+//                 |mut region| {
+//                     for q in C::selectors(&config).iter() {
+//                         q.enable(&mut region, 0)?;
+//                     }
+//                     Ok(())
+//                 },
+//             )?;
+//             Ok(())
+//         }
+//     }
 
-    let dummy_vk = vk
-        .is_none()
-        .then(|| keygen_vk(params, &CsProxy::<Fr, ConcreteCircuit>(PhantomData)).unwrap());
-    let protocol = compile(
-        params,
-        vk.or(dummy_vk.as_ref()).unwrap(),
-        Config::kzg()
-            .with_num_instance(num_instance.clone())
-            .with_accumulator_indices(ConcreteCircuit::accumulator_indices()),
-    );
-    let instances = num_instance.into_iter().map(|n| vec![Fr::default(); n]).collect();
-    let proof = {
-        let mut transcript = PoseidonTranscript::<NativeLoader, _>::new::<SECURE_MDS>(Vec::new());
-        for _ in 0..protocol
-            .num_witness
-            .iter()
-            .chain(Some(&protocol.quotient.num_chunk()))
-            .sum::<usize>()
-        {
-            transcript.write_ec_point(G1Affine::default()).unwrap();
-        }
-        for _ in 0..protocol.evaluations.len() {
-            transcript.write_scalar(Fr::default()).unwrap();
-        }
-        let queries = PlonkProof::<G1Affine, NativeLoader, AS>::empty_queries(&protocol);
-        for _ in 0..AS::estimate_cost(&queries).num_commitment {
-            transcript.write_ec_point(G1Affine::default()).unwrap();
-        }
-        transcript.finalize()
-    };
+//     let dummy_vk = vk
+//         .is_none()
+//         .then(|| keygen_vk(params, &CsProxy::<Fr, ConcreteCircuit>(PhantomData)).unwrap());
+//     let protocol = compile(
+//         params,
+//         vk.or(dummy_vk.as_ref()).unwrap(),
+//         Config::kzg()
+//             .with_num_instance(num_instance.clone())
+//             .with_accumulator_indices(ConcreteCircuit::accumulator_indices()),
+//     );
+//     let instances = num_instance.into_iter().map(|n| vec![Fr::default(); n]).collect();
+//     let proof = {
+//         let mut transcript = PoseidonTranscript::<NativeLoader, _>::new::<SECURE_MDS>(Vec::new());
+//         for _ in 0..protocol
+//             .num_witness
+//             .iter()
+//             .chain(Some(&protocol.quotient.num_chunk()))
+//             .sum::<usize>()
+//         {
+//             transcript.write_ec_point(G1Affine::default()).unwrap();
+//         }
+//         for _ in 0..protocol.evaluations.len() {
+//             transcript.write_scalar(Fr::default()).unwrap();
+//         }
+//         let queries = PlonkProof::<G1Affine, NativeLoader, AS>::empty_queries(&protocol);
+//         for _ in 0..AS::estimate_cost(&queries).num_commitment {
+//             transcript.write_ec_point(G1Affine::default()).unwrap();
+//         }
+//         transcript.finalize()
+//     };
 
-    Snark::new(protocol, instances, proof)
-}
+//     Snark::new(protocol, instances, proof)
+// }

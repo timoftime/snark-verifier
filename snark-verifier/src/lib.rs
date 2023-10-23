@@ -13,6 +13,11 @@ pub mod verifier;
 pub(crate) use halo2_base::halo2_proofs;
 pub(crate) use halo2_proofs::halo2curves as halo2_curves;
 
+#[cfg(feature = "halo2-pse")]
+pub(crate) use halo2_curves::pairing;
+#[cfg(feature = "halo2-axiom")]
+pub(crate) use pairing;
+
 /// Error that could happen while verification.
 #[derive(Clone, Debug)]
 pub enum Error {
