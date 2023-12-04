@@ -22,7 +22,7 @@ use itertools::Itertools;
 use rand::{rngs::StdRng, SeedableRng};
 pub use snark_verifier::loader::evm::encode_calldata;
 use snark_verifier::{
-    loader::evm::{compile_solidity, deploy_and_call, EvmLoader},
+    loader::evm::{deploy_and_call, EvmLoader, compile_yul},
     pcs::{
         kzg::{KzgAccumulator, KzgAsVerifyingKey, KzgDecidingKey, KzgSuccinctVerifyingKey},
         AccumulationDecider, AccumulationScheme, PolynomialCommitmentScheme,
@@ -127,34 +127,34 @@ pub fn gen_evm_verifier<C, AS>(
 where
     C: CircuitExt<Fr>,
     AS: EvmKzgAccumulationScheme,
-{
-    let protocol = compile(
-        params,
-        vk,
-        Config::kzg()
-            .with_num_instance(num_instance.clone())
-            .with_accumulator_indices(C::accumulator_indices()),
-    );
-    // deciding key
-    let dk = (params.get_g()[0], params.g2(), params.s_g2()).into();
-
-    let loader = EvmLoader::new::<Fq, Fr>();
-    let protocol = protocol.loaded(&loader);
-    let mut transcript = EvmTranscript::<_, Rc<EvmLoader>, _, _>::new(&loader);
-
-    let instances = transcript.load_instances(num_instance);
-    let proof =
-        PlonkVerifier::<AS>::read_proof(&dk, &protocol, &instances, &mut transcript).unwrap();
-    PlonkVerifier::<AS>::verify(&dk, &protocol, &instances, &proof).unwrap();
-
-    let sol_code = loader.solidity_code();
-    let byte_code = compile_solidity(&sol_code);
-    if let Some(path) = path {
-        path.parent().and_then(|dir| fs::create_dir_all(dir).ok()).unwrap();
-        fs::write(path, sol_code).unwrap();
+    {
+        let protocol = compile(
+            params,
+            vk,
+            Config::kzg()
+                .with_num_instance(num_instance.clone())
+                .with_accumulator_indices(C::accumulator_indices()),
+        );
+        // deciding key
+        let dk = (params.get_g()[0], params.g2(), params.s_g2()).into();
+    
+        let loader = EvmLoader::new::<Fq, Fr>();
+        let protocol = protocol.loaded(&loader);
+        let mut transcript = EvmTranscript::<_, Rc<EvmLoader>, _, _>::new(&loader);
+    
+        let instances = transcript.load_instances(num_instance);
+        let proof =
+            PlonkVerifier::<AS>::read_proof(&dk, &protocol, &instances, &mut transcript).unwrap();
+        PlonkVerifier::<AS>::verify(&dk, &protocol, &instances, &proof).unwrap();
+    
+        let yul_code = loader.yul_code();
+        let byte_code = compile_yul(&yul_code);
+        if let Some(path) = path {
+            path.parent().and_then(|dir| fs::create_dir_all(dir).ok()).unwrap();
+            fs::write(path, yul_code).unwrap();
+        }
+        byte_code
     }
-    byte_code
-}
 
 pub fn gen_evm_verifier_gwc<C: CircuitExt<Fr>>(
     params: &ParamsKZG<Bn256>,
